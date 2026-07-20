@@ -5,7 +5,7 @@ app=FastAPI()
 
 @app.get("/")
 def home():
-  return('well-come to do list application')
+  return{"connected":True}
 
 
 @app.get("/tasks")
@@ -19,12 +19,12 @@ def All_tasks():
 @app.post("/tasks/Add")
 def Add_task(task:Task):
   try:
-      creaed , msg = Create_Task(task)
+      task_created, msg = Create_Task(task)
   except Exception as e:
     raise HTTPException(status_code=500,detail='internal server error')
 
-  if creaed:
-    return("Task Added successfully")
+  if task_created:
+    return{"message":"Task created successfully"}
   else:
     raise HTTPException(status_code=409 ,detail='task all ready exists')
   
@@ -36,19 +36,27 @@ def mark(taskid:int):
   except Exception as e:
     raise HTTPException(status_code=500,detail="internal server error")
   if ack:
-    return("Marked successfully")
+    return{"message":"Marked successfully"}
   else:
     raise HTTPException(status_code=409 ,detail=f"task dose'nt exists {msg}")
   
 
 #completed 
-@app.delete("/task/delete")
-def RemoveTask(taskid:int):
+@app.delete("/task/delete/{taskid}")
+def delete_Task(taskid:int):
   try:
     ack,msg = Delete_Tasks(taskid=taskid)
   except Exception as e:
-    raise HTTPException(status_code=500,detail="internal server error")
+    raise HTTPException(
+      status_code=500,
+      detail="internal server error"
+      )
+  
   if ack:
-    return("tasks deleted successfully")
-  else:
-    raise HTTPException(status_code=409 ,detail=f"task dose'nt exists {msg}")
+    return{"message": "tasks deleted successfully"}
+  
+  if not ack:
+    raise HTTPException(
+        status_code=409 ,
+        detail=f"task dose'nt exists {msg}"
+        )

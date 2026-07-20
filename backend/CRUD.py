@@ -15,13 +15,12 @@ class Tasks(BaseModel):
 
     model_config = ConfigDict(from_attributes=True)
 
-def is_present(taskid:int):
+def is_present(taskid:int,userid:id):
     ack , db = check_database_is_active()
     if not ack:
         raise RuntimeError(f"Database connection failed: {db}")
     cursor = db.cursor()
-    Query="SELECT TID FROM TASKS;"
-    cursor.execute(Query)
+    cursor.execute("SELECT TID FROM TASKS WHERE UID=%s",(userid,))
     tasksids=cursor.fetchall() 
     db.commit()
     cursor.close()
@@ -33,7 +32,12 @@ def is_present(taskid:int):
     return False
 
 
-def Create_Task(task:Task | dict) -> bool|str:
+def Create_Task(task:Task | dict,userid:id) -> bool|str:
+    taskid=task['taskid']
+    ispresent=is_present(taskid,userid)
+    if ispresent:
+        return(False,'thid Tasks id alreadey exits')
+    
     if isinstance(task, dict):
         task = Task(**task)
 
@@ -44,8 +48,8 @@ def Create_Task(task:Task | dict) -> bool|str:
     cursor = db.cursor()
     try:
         cursor.execute(
-            "INSERT INTO TASKS (Tid, Tname, Tdescreption, is_completed) VALUES (%s, %s, %s, %s)",
-            (task.taskid, task.taskname, task.taskdescreption, task.is_completed),
+            "INSERT INTO TASKS (Tid, Tname, Tdescreption, is_completed,uid) VALUES (%s, %s, %s, %s,%s)",
+            (task.taskid, task.taskname, task.taskdescreption, task.is_completed,userid),
         )
         db.commit()
         cursor.close()
@@ -131,3 +135,8 @@ def Mark_Completed(taskid:int)->bool|str:
         cursor.close()
         db.close()
         return(False,e)
+
+task={'taskid':4, 'taskname':'rose day', 'taskdescreption':'need to give a rose at rose day to my self', 'is_completed':False,}
+
+ack,d=Create_Task(task,'moizdiv')
+print(ack,d)
